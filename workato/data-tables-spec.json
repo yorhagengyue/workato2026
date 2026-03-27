@@ -1,0 +1,78 @@
+﻿{
+  "project": "attention-decision-system-mvp",
+  "namespace": "proj_attention_decision_mvp",
+  "tables": [
+    {
+      "name": "tbl_project_snapshots",
+      "fields": [
+        {"name": "project_id", "type": "string"},
+        {"name": "snapshot_time", "type": "datetime"},
+        {"name": "tech_stack", "type": "text"},
+        {"name": "current_goals", "type": "text"},
+        {"name": "open_problems", "type": "text"},
+        {"name": "acceptance_signals", "type": "text"},
+        {"name": "rejection_signals", "type": "text"},
+        {"name": "risk_tolerance", "type": "string"},
+        {"name": "trace_id", "type": "string"}
+      ]
+    },
+    {
+      "name": "tbl_candidates",
+      "fields": [
+        {"name": "candidate_id", "type": "string"},
+        {"name": "source_class", "type": "string"},
+        {"name": "source_type", "type": "string"},
+        {"name": "evidence_grade", "type": "string"},
+        {"name": "candidate_url", "type": "string"},
+        {"name": "summary", "type": "text"},
+        {"name": "context_similarity", "type": "number"},
+        {"name": "noise_risk_score", "type": "number"},
+        {"name": "suggested_action", "type": "string"},
+        {"name": "security_gate", "type": "string"},
+        {"name": "trace_id", "type": "string"}
+      ]
+    },
+    {
+      "name": "tbl_watchlist",
+      "fields": [
+        {"name": "item_id", "type": "string"},
+        {"name": "candidate_id", "type": "string"},
+        {"name": "project_id", "type": "string"},
+        {"name": "note", "type": "text"},
+        {"name": "created_at", "type": "datetime"},
+        {"name": "created_by", "type": "string"},
+        {"name": "trace_id", "type": "string"}
+      ]
+    },
+    {
+      "name": "tbl_audit_events",
+      "fields": [
+        {"name": "who", "type": "string"},
+        {"name": "when", "type": "datetime"},
+        {"name": "source", "type": "string"},
+        {"name": "trigger_reason", "type": "text"},
+        {"name": "files_accessed", "type": "text"},
+        {"name": "action_taken", "type": "string"},
+        {"name": "user_confirmed", "type": "boolean"},
+        {"name": "trace_id", "type": "string"}
+      ]
+    }
+  ],
+  "recipes": [
+    {
+      "name": "rcp_ingest_signals",
+      "do": ["ingest_signals", "normalize_fields", "write_tbl_candidates"],
+      "dont": ["relevance_scoring", "deep_read_decision", "b_class_weighting"]
+    },
+    {
+      "name": "rcp_hint_and_action",
+      "do": ["consume_final_decision", "emit_hint_event", "write_watchlist_on_confirmed_action", "write_tbl_audit_events"],
+      "dont": ["policy_recheck", "in_recipe_scoring", "trigger_local_deep_read"]
+    }
+  ],
+  "boundary": {
+    "workato": "orchestration_only",
+    "mcp": "bridge_only",
+    "local_runtime": "deep_read_and_local_execution_only"
+  }
+}
