@@ -1,0 +1,151 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "project_snapshot.schema.json",
+  "title": "project_snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "project_id",
+    "snapshot_time",
+    "repo_urls",
+    "tech_stack",
+    "active_modules",
+    "current_goals",
+    "open_problems",
+    "non_goals",
+    "risk_tolerance",
+    "latency_budget_ms",
+    "cost_budget_daily_usd",
+    "security_constraints",
+    "acceptance_signals",
+    "rejection_signals",
+    "trace_id",
+    "last_feedback"
+  ],
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "snapshot_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "repo_urls": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "format": "uri",
+        "pattern": "^https?://"
+      }
+    },
+    "tech_stack": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "active_modules": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "current_goals": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "open_problems": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "non_goals": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "risk_tolerance": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "latency_budget_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "cost_budget_daily_usd": {
+      "type": "number",
+      "minimum": 0
+    },
+    "security_constraints": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "acceptance_signals": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "rejection_signals": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "trace_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{8,128}$"
+    },
+    "last_feedback": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "item_id",
+          "feedback",
+          "reason"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "feedback": {
+            "type": "string",
+            "enum": [
+              "upvote",
+              "downvote",
+              "mute",
+              "act"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

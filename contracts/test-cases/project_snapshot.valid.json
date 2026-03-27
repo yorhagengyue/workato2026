@@ -1,0 +1,51 @@
+﻿{
+  "project_id": "workato-track-two",
+  "snapshot_time": "2026-03-27T10:00:00Z",
+  "repo_urls": [
+    "https://github.com/acme/attention-system"
+  ],
+  "tech_stack": [
+    "python",
+    "typescript",
+    "workato",
+    "mcp"
+  ],
+  "active_modules": [
+    "decision-engine",
+    "policy-gate"
+  ],
+  "current_goals": [
+    "reduce_interruptions",
+    "prove_safety_control"
+  ],
+  "open_problems": [
+    "noise_control",
+    "traceability"
+  ],
+  "non_goals": [
+    "auto_code_write"
+  ],
+  "risk_tolerance": "medium",
+  "latency_budget_ms": 1500,
+  "cost_budget_daily_usd": 25,
+  "security_constraints": [
+    "readonly_default",
+    "no_prod_creds"
+  ],
+  "acceptance_signals": [
+    "official_release_notes",
+    "repo_security_updates"
+  ],
+  "rejection_signals": [
+    "open_twitter_scrape",
+    "auto_commit"
+  ],
+  "trace_id": "trace.day1.snapshot.0001",
+  "last_feedback": [
+    {
+      "item_id": "cand-001",
+      "feedback": "upvote",
+      "reason": "high impact on current stack"
+    }
+  ]
+}

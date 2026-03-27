@@ -1,0 +1,38 @@
+﻿{
+  "candidate_id": "cand-a-001",
+  "source_class": "A",
+  "source_type": "official_doc",
+  "evidence_grade": "A1",
+  "candidate_url": "https://example.com/release-note",
+  "published_at": "2026-03-27T09:00:00Z",
+  "summary": "Official release introduces API behavior change for tool execution.",
+  "claimed_change_type": [
+    "breaking",
+    "feature"
+  ],
+  "affected_stack": [
+    "mcp",
+    "python"
+  ],
+  "relevance_score": 0.82,
+  "context_similarity": 0.81,
+  "novelty_score": 0.66,
+  "impact_score": 0.79,
+  "trust_score": 0.9,
+  "noise_risk_score": 0.25,
+  "execution_cost_score": 0.35,
+  "score_total": 84,
+  "decision": "deep_read",
+  "decision_reason": [
+    "EVIDENCE_PASS",
+    "HIGH_CONTEXT_RELEVANCE",
+    "DEEP_READ_RULE_A"
+  ],
+  "trigger_reason": [
+    "official release note",
+    "matches active module decision-engine"
+  ],
+  "requires_user_confirm": true,
+  "security_gate": "pass",
+  "trace_id": "trace.day1.repo.0001"
+}

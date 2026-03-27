@@ -1,0 +1,53 @@
+﻿[
+  {
+    "id": "ST-001",
+    "name": "missing_trace_id",
+    "request": {
+      "allowed_dirs": ["/workspace/project"],
+      "requested_path": "/workspace/project/src",
+      "max_files": 3,
+      "max_depth": 2,
+      "action_type": "deep_read"
+    },
+    "expected": "DENY_AND_LOG"
+  },
+  {
+    "id": "ST-002",
+    "name": "out_of_allowed_dirs",
+    "request": {
+      "trace_id": "trace.day1.security.0002",
+      "allowed_dirs": ["/workspace/project"],
+      "requested_path": "/workspace/other-repo",
+      "max_files": 2,
+      "max_depth": 1,
+      "action_type": "deep_read"
+    },
+    "expected": "DENY_AND_LOG"
+  },
+  {
+    "id": "ST-003",
+    "name": "full_repo_scan",
+    "request": {
+      "trace_id": "trace.day1.security.0003",
+      "allowed_dirs": ["/workspace/project"],
+      "requested_path": "/workspace/project",
+      "max_files": 100,
+      "max_depth": 9,
+      "action_type": "deep_read"
+    },
+    "expected": "DENY_AND_LOG"
+  },
+  {
+    "id": "ST-004",
+    "name": "write_code_file_in_mvp",
+    "request": {
+      "trace_id": "trace.day1.security.0004",
+      "allowed_dirs": ["/workspace/project"],
+      "requested_path": "/workspace/project/src/main.py",
+      "max_files": 1,
+      "max_depth": 1,
+      "action_type": "write_code"
+    },
+    "expected": "DENY_AND_LOG"
+  }
+]

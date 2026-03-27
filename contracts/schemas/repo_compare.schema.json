@@ -1,0 +1,220 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "repo_compare.schema.json",
+  "title": "repo_compare",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "candidate_id",
+    "source_class",
+    "source_type",
+    "evidence_grade",
+    "candidate_url",
+    "published_at",
+    "summary",
+    "claimed_change_type",
+    "affected_stack",
+    "relevance_score",
+    "context_similarity",
+    "novelty_score",
+    "impact_score",
+    "trust_score",
+    "noise_risk_score",
+    "execution_cost_score",
+    "score_total",
+    "decision",
+    "decision_reason",
+    "trigger_reason",
+    "requires_user_confirm",
+    "security_gate",
+    "trace_id"
+  ],
+  "properties": {
+    "candidate_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_class": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B"
+      ]
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "github",
+        "official_doc",
+        "official_blog",
+        "tweet_whitelist"
+      ]
+    },
+    "evidence_grade": {
+      "type": "string",
+      "enum": [
+        "A0",
+        "A1",
+        "A2"
+      ]
+    },
+    "candidate_url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "claimed_change_type": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "feature",
+          "breaking",
+          "security",
+          "perf",
+          "opinion"
+        ]
+      }
+    },
+    "affected_stack": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "relevance_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "context_similarity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "novelty_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "impact_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "trust_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "noise_risk_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "execution_cost_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "score_total": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "discard",
+        "mention",
+        "hint",
+        "deep_read",
+        "action"
+      ]
+    },
+    "decision_reason": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "trigger_reason": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "requires_user_confirm": {
+      "type": "boolean"
+    },
+    "security_gate": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "review",
+        "block"
+      ]
+    },
+    "trace_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{8,128}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "source_type": {
+            "const": "tweet_whitelist"
+          }
+        },
+        "required": [
+          "source_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "source_class": {
+            "const": "B"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "source_type": {
+            "enum": [
+              "github",
+              "official_doc",
+              "official_blog"
+            ]
+          }
+        },
+        "required": [
+          "source_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "source_class": {
+            "const": "A"
+          }
+        }
+      }
+    }
+  ]
+}
