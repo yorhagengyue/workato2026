@@ -1,5 +1,6 @@
-﻿import copy
+﻿import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -126,6 +127,13 @@ class TestDecisionEngine(unittest.TestCase):
         self.assertEqual("hint", result["decision"])
         self.assertIn("PROFILE_MISMATCH", result["decision_reason"])
 
+    def test_profile_match_can_boost_level(self):
+        candidate = self._candidate()
+        candidate["relevance_score"] = 0.72
+        result = decision_engine.decide_candidate(candidate, self._snapshot())
+        self.assertEqual("deep_read", result["decision"])
+        self.assertIn("PROFILE_MATCH_BOOST", result["decision_reason"])
+
     def test_strict_validation_can_reject_payload(self):
         candidate = self._candidate()
         candidate.pop("trace_id")
@@ -156,6 +164,45 @@ class TestDecisionEngine(unittest.TestCase):
         self.assertEqual(result["trace_id"], event["trace_id"])
         self.assertIn("when", event)
         self.assertIn("action_taken", event)
+
+    def test_persist_handoff_payload(self):
+        candidate = self._candidate()
+        result = decision_engine.decide_candidate(candidate)
+        handoff = decision_engine.build_handoff_payload(candidate, result)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            outbox = Path(tmp) / "handoff.jsonl"
+            info = decision_engine.persist_handoff_payload(handoff, str(outbox))
+            self.assertEqual(str(outbox), info["outbox_path"])
+            lines = outbox.read_text(encoding="utf-8").strip().splitlines()
+            self.assertEqual(1, len(lines))
+            saved = json.loads(lines[0])
+            self.assertEqual(handoff["trace_id"], saved["trace_id"])
+
+    def test_persist_handoff_payload_rejects_bad_payload(self):
+        candidate = self._candidate()
+        result = decision_engine.decide_candidate(candidate)
+        handoff = decision_engine.build_handoff_payload(candidate, result)
+        handoff.pop("trace_id")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            outbox = Path(tmp) / "handoff.jsonl"
+            with self.assertRaises(ValueError):
+                decision_engine.persist_handoff_payload(handoff, str(outbox))
+
+    def test_persist_audit_event(self):
+        candidate = self._candidate()
+        result = decision_engine.decide_candidate(candidate)
+        event = decision_engine.build_audit_event(result, who="system", source="decision_engine")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audit.jsonl"
+            info = decision_engine.persist_audit_event(event, str(path))
+            self.assertEqual(str(path), info["audit_path"])
+            lines = path.read_text(encoding="utf-8").strip().splitlines()
+            self.assertEqual(1, len(lines))
+            saved = json.loads(lines[0])
+            self.assertEqual(event["trace_id"], saved["trace_id"])
 
 
 if __name__ == "__main__":

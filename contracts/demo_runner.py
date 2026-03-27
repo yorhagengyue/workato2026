@@ -1,12 +1,17 @@
 ﻿#!/usr/bin/env python3
 """Minimal runnable flow for demo purposes.
 
-Run:
+Run (sample):
   python contracts/demo_runner.py
+
+Run (real source first):
+  python contracts/ingest_github_releases.py
+  python contracts/demo_runner.py --input-candidates output/ingest/github_candidates.json
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -64,9 +69,32 @@ def _sample_candidate() -> dict:
     }
 
 
+def _load_first_candidate(path: str | None) -> dict:
+    if not path:
+        return _sample_candidate()
+
+    p = Path(path)
+    if not p.exists():
+        return _sample_candidate()
+
+    try:
+        items = json.loads(p.read_text(encoding="utf-8-sig"))
+    except json.JSONDecodeError:
+        return _sample_candidate()
+
+    if isinstance(items, list) and items:
+        return items[0]
+
+    return _sample_candidate()
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input-candidates", default="", help="path to candidate list JSON")
+    args = parser.parse_args()
+
     snapshot = _sample_snapshot()
-    candidate = _sample_candidate()
+    candidate = _load_first_candidate(args.input_candidates)
 
     triage = decision_engine.decide_candidate(candidate, snapshot)
     handoff = decision_engine.build_handoff_payload(candidate, triage)
@@ -78,7 +106,7 @@ def main() -> int:
         "max_files": 3,
         "max_depth": 2,
         "action_type": "deep_read",
-        "security_gate": candidate["security_gate"],
+        "security_gate": candidate.get("security_gate", "pass"),
     }
     policy = policy_gate.evaluate_runtime_request(policy_request)
 
@@ -92,6 +120,9 @@ def main() -> int:
         user_confirmed=False,
     )
 
+    decision_engine.persist_handoff_payload(handoff)
+    decision_engine.persist_audit_event(audit)
+
     out_dir = Path("output/demo-run")
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -101,6 +132,8 @@ def main() -> int:
     (out_dir / "audit.json").write_text(json.dumps(audit, indent=2), encoding="utf-8")
 
     print("Wrote output/demo-run/{triage,handoff,policy,audit}.json")
+    print("Appended output/workato-outbox/handoff.jsonl")
+    print("Appended output/audit/tbl_audit_events.jsonl")
     return 0
 
 

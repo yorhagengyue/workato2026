@@ -7,7 +7,9 @@ Evidence -> Context -> Profile -> Policy -> Action
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 import validator
@@ -26,6 +28,11 @@ DECISION_LEVELS = ["discard", "mention", "hint", "deep_read", "action"]
 def _degrade(decision: str) -> str:
     idx = DECISION_LEVELS.index(decision)
     return DECISION_LEVELS[max(0, idx - 1)]
+
+
+def _promote(decision: str) -> str:
+    idx = DECISION_LEVELS.index(decision)
+    return DECISION_LEVELS[min(len(DECISION_LEVELS) - 1, idx + 1)]
 
 
 def _add_reason(result: dict[str, Any], reason: str) -> None:
@@ -127,6 +134,7 @@ def decide_candidate(
     security_gate = candidate.get("security_gate", "pass")
 
     tentative_decision = "hint"
+    profile_boosted = False
 
     # 1) Evidence Gate
     result["gate_path"].append(GATE_ORDER[0])
@@ -167,6 +175,17 @@ def decide_candidate(
         _add_reason(result, "PROFILE_MISMATCH")
     elif adjustment == "boost":
         _add_reason(result, "PROFILE_MATCH")
+        # Controlled one-level promotion:
+        # only A-source with >=A1 evidence and reasonably high relevance can be promoted.
+        if (
+            source_class == "A"
+            and evidence_grade in {"A1", "A2"}
+            and relevance_score >= 0.70
+            and tentative_decision in {"mention", "hint"}
+        ):
+            tentative_decision = _promote(tentative_decision)
+            profile_boosted = True
+            _add_reason(result, "PROFILE_MATCH_BOOST")
 
     # 4) Policy Gate
     result["gate_path"].append(GATE_ORDER[3])
@@ -184,7 +203,7 @@ def decide_candidate(
     decision = tentative_decision
 
     if tentative_decision == "deep_read":
-        deep_read_rule_a = source_class == "A" and relevance_score > 0.75 and security_gate == "pass"
+        deep_read_rule_a = source_class == "A" and (relevance_score > 0.75 or profile_boosted) and security_gate == "pass"
         deep_read_rule_b = source_class == "A" and user_interest
 
         if deep_read_rule_a:
@@ -252,3 +271,65 @@ def build_audit_event(
         "user_confirmed": user_confirmed,
         "trace_id": decision_packet.get("trace_id", ""),
     }
+
+
+def _validate_handoff_payload(payload: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    required = {
+        "candidate_id",
+        "project_id",
+        "decision",
+        "decision_reason",
+        "requires_user_confirm",
+        "source_class",
+        "source_type",
+        "security_gate",
+        "trace_id",
+    }
+    missing = required - payload.keys()
+    if missing:
+        errors.append(f"missing_required={sorted(missing)}")
+
+    if payload.get("decision") not in {"discard", "mention", "hint", "deep_read", "action"}:
+        errors.append("decision invalid")
+    if not isinstance(payload.get("decision_reason"), list):
+        errors.append("decision_reason must be list")
+    if not isinstance(payload.get("requires_user_confirm"), bool):
+        errors.append("requires_user_confirm must be bool")
+    if payload.get("source_class") not in {"A", "B"}:
+        errors.append("source_class invalid")
+    if payload.get("security_gate") not in {"pass", "review", "block"}:
+        errors.append("security_gate invalid")
+    if not isinstance(payload.get("trace_id"), str) or not payload.get("trace_id", "").strip():
+        errors.append("trace_id invalid")
+
+    return errors
+
+
+def persist_handoff_payload(payload: dict[str, Any], outbox_path: str = "output/workato-outbox/handoff.jsonl") -> dict[str, Any]:
+    """Persist a validated handoff payload to outbox for Workato ingestion."""
+    errors = _validate_handoff_payload(payload)
+    if errors:
+        raise ValueError(f"invalid handoff payload: {errors}")
+
+    path = Path(outbox_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+    return {"outbox_path": str(path), "trace_id": payload["trace_id"]}
+
+
+def persist_audit_event(event: dict[str, Any], audit_path: str = "output/audit/tbl_audit_events.jsonl") -> dict[str, Any]:
+    """Persist one audit event record."""
+    required = {"who", "when", "source", "trigger_reason", "files_accessed", "action_taken", "user_confirmed", "trace_id"}
+    missing = required - event.keys()
+    if missing:
+        raise ValueError(f"invalid audit event, missing={sorted(missing)}")
+
+    path = Path(audit_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(event, ensure_ascii=False) + "\n")
+
+    return {"audit_path": str(path), "trace_id": event["trace_id"]}
