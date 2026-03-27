@@ -1,3 +1,7 @@
 ﻿__pycache__/
 *.pyc
+output/demo-run/
+output/ingest/
+output/workato-outbox/
+output/audit/
 
